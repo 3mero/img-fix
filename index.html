@@ -1,87 +1,179 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تحسين الصور المتقدم مع Super-Resolution</title>
+    <title>تحسين الصور المتقدم مع Super-Resolution | Advanced Image Enhancement with Super-Resolution</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --container-bg: #fff;
+            --text-color: #333;
+            --button-bg: #3498db;
+            --button-hover: #2980b9;
+            --button-disabled: #95a5a6;
+            --border-color: #bdc3c7;
+            --heading-color: #2c3e50;
+            --label-color: #34495e;
+            --info-color: #7f8c8d;
+            --success-color: #27ae60;
+        }
+
+        .dark-mode {
+            --bg-color: #1a1a1a;
+            --container-bg: #2c2c2c;
+            --text-color: #f0f0f0;
+            --button-bg: #2980b9;
+            --button-hover: #3498db;
+            --button-disabled: #555;
+            --border-color: #555;
+            --heading-color: #ecf0f1;
+            --label-color: #bdc3c7;
+            --info-color: #95a5a6;
+            --success-color: #2ecc71;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.6;
             margin: 0;
-            padding: 20px;
-            background-color: #f0f4f8;
-            color: #333;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
         }
         .container {
+            width: 90%;
             max-width: 900px;
-            margin: 0 auto;
-            background-color: #fff;
+            background-color: var(--container-bg);
             padding: 30px;
             border-radius: 10px;
             box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            transition: background-color 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
         h1 {
             text-align: center;
-            color: #2c3e50;
+            color: var(--heading-color);
             margin-bottom: 30px;
         }
         .input-group {
             margin-bottom: 20px;
+            width: 100%;
         }
         label {
             display: block;
             margin-bottom: 5px;
             font-weight: bold;
-            color: #34495e;
+            color: var(--label-color);
         }
-        input[type="file"], input[type="number"], select, button {
+        input[type="file"], input[type="number"], select {
             width: 100%;
             padding: 10px;
             margin-bottom: 10px;
-            border: 1px solid #bdc3c7;
+            border: 1px solid var(--border-color);
             border-radius: 5px;
             font-size: 16px;
+            background-color: var(--container-bg);
+            color: var(--text-color);
         }
         button {
-            background-color: #3498db;
+            background-color: var(--button-bg);
             color: white;
             border: none;
             cursor: pointer;
-            transition: background-color 0.3s;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            font-weight: bold;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+            padding: 12px 24px;
+            border-radius: 5px;
+            display: inline-block;
+            margin: 10px 0;
         }
         button:hover {
-            background-color: #2980b9;
+            background-color: var(--button-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        button::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 5px;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.5);
+            opacity: 0;
+            border-radius: 100%;
+            transform: scale(1, 1) translate(-50%);
+            transform-origin: 50% 50%;
+        }
+        button:focus:not(:active)::after {
+            animation: ripple 1s ease-out;
+        }
+        @keyframes ripple {
+            0% {
+                transform: scale(0, 0);
+                opacity: 1;
+            }
+            20% {
+                transform: scale(25, 25);
+                opacity: 1;
+            }
+            100% {
+                opacity: 0;
+                transform: scale(40, 40);
+            }
         }
         button:disabled {
-            background-color: #95a5a6;
+            background-color: var(--button-disabled);
             cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
         .image-container {
             display: flex;
             justify-content: space-between;
             margin-top: 30px;
+            flex-wrap: wrap;
+            width: 100%;
         }
         .image-wrapper {
             width: 48%;
+            margin-bottom: 20px;
         }
         .image-wrapper img {
             max-width: 100%;
             height: auto;
-            border: 1px solid #bdc3c7;
+            border: 1px solid var(--border-color);
             border-radius: 5px;
         }
         .image-info {
             text-align: center;
             margin-top: 10px;
             font-size: 14px;
-            color: #7f8c8d;
+            color: var(--info-color);
         }
         #status {
             text-align: center;
             font-weight: bold;
             margin-top: 20px;
-            color: #27ae60;
+            color: var(--success-color);
+            display: none;
         }
         #loadingOverlay {
             display: none;
@@ -96,8 +188,8 @@
             z-index: 1000;
         }
         .spinner {
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid #3498db;
+            border: 5px solid var(--border-color);
+            border-top: 5px solid var(--button-bg);
             border-radius: 50%;
             width: 50px;
             height: 50px;
@@ -108,56 +200,108 @@
             100% { transform: rotate(360deg); }
         }
         #downloadButton {
-            display: block;
+            display: none;
             width: 200px;
             margin: 20px auto;
-            padding: 10px;
-            background-color: #2ecc71;
+        }
+        #darkModeToggle, #languageToggle {
+            position: fixed;
+            top: 20px;
+            font-size: 16px;
+            background: var(--button-bg);
             color: white;
-            text-align: center;
+            border: none;
+            padding: 10px 15px;
             border-radius: 5px;
             cursor: pointer;
+            z-index: 1001;
             transition: background-color 0.3s;
         }
-        #downloadButton:hover {
-            background-color: #27ae60;
+        #darkModeToggle {
+            left: 20px;
+        }
+        #languageToggle {
+            right: 20px;
+        }
+        #darkModeToggle:hover, #languageToggle:hover {
+            background-color: var(--button-hover);
+        }
+        .hidden {
+            display: none;
+        }
+        .button-container {
+            text-align: center;
+            margin-top: 20px;
         }
     </style>
 </head>
 <body>
+    <button id="darkModeToggle" aria-label="تبديل وضع الإضاءة | Toggle dark mode">
+        <i class="fas fa-lightbulb"></i>
+    </button>
+    <button id="languageToggle">EN | عربي</button>
     <div class="container">
-        <h1>تحسين الصور المتقدم مع Super-Resolution</h1>
+        <h1>
+            <span class="ar">تحسين الصور المتقدم مع Super-Resolution</span>
+            <span class="en hidden">Advanced Image Enhancement with Super-Resolution</span>
+        </h1>
         <div class="input-group">
-            <label for="imageInput">اختر صورة:</label>
+            <label for="imageInput">
+                <span class="ar">اختر صورة:</span>
+                <span class="en hidden">Choose an image:</span>
+            </label>
             <input type="file" id="imageInput" accept="image/*">
         </div>
         <div class="input-group">
-            <label for="scaleInput">معامل التكبير (1-4):</label>
+            <label for="scaleInput">
+                <span class="ar">معامل التكبير (1-4):</span>
+                <span class="en hidden">Scale factor (1-4):</span>
+            </label>
             <input type="number" id="scaleInput" min="1" max="4" step="1" value="2">
         </div>
         <div class="input-group">
-            <label for="sharpnessInput">حدة الصورة (0-100):</label>
+            <label for="sharpnessInput">
+                <span class="ar">حدة الصورة (0-100):</span>
+                <span class="en hidden">Image sharpness (0-100):</span>
+            </label>
             <input type="number" id="sharpnessInput" min="0" max="100" step="1" value="50">
         </div>
         <div class="input-group">
-            <label for="contrastInput">التباين (0-100):</label>
+            <label for="contrastInput">
+                <span class="ar">التباين (0-100):</span>
+                <span class="en hidden">Contrast (0-100):</span>
+            </label>
             <input type="number" id="contrastInput" min="0" max="100" step="1" value="50">
         </div>
-        <button id="enhanceButton">تحسين الصورة</button>
+        <div class="button-container">
+            <button id="enhanceButton">
+                <span class="ar">تحسين الصورة</span>
+                <span class="en hidden">Enhance Image</span>
+            </button>
+        </div>
         <div id="status"></div>
         <div class="image-container">
             <div class="image-wrapper">
-                <h3>الصورة الأصلية</h3>
-                <img id="originalImage" alt="الصورة الأصلية">
+                <h3>
+                    <span class="ar">الصورة الأصلية</span>
+                    <span class="en hidden">Original Image</span>
+                </h3>
+                <img id="originalImage" alt="الصورة الأصلية | Original Image">
                 <div id="originalImageInfo" class="image-info"></div>
             </div>
             <div class="image-wrapper">
-                <h3>الصورة المحسنة</h3>
-                <img id="enhancedImage" alt="الصورة المحسنة">
+                <h3>
+                    <span class="ar">الصورة المحسنة</span>
+                    <span class="en hidden">Enhanced Image</span>
+                </h3>
+                <img id="enhancedImage" alt="الصورة المحسنة | Enhanced Image">
                 <div id="enhancedImageInfo" class="image-info"></div>
             </div>
         </div>
-        <button id="downloadButton" style="display: none;">تنزيل الصورة المحسنة</button>
+        <button id="downloadButton">
+            <span class="ar">تنزيل الصورة المحسنة</span>
+            <span class="en hidden">Download Enhanced Image</span>
+        </button>
     </div>
     <div id="loadingOverlay">
         <div class="spinner"></div>
@@ -176,8 +320,25 @@
         const downloadButton = document.getElementById('downloadButton');
         const originalImageInfo = document.getElementById('originalImageInfo');
         const enhancedImageInfo = document.getElementById('enhancedImageInfo');
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        const languageToggle = document.getElementById('languageToggle');
 
         let originalImageData;
+        let currentLanguage = 'ar';
+
+        darkModeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            const icon = darkModeToggle.querySelector('i');
+            icon.classList.toggle('fa-lightbulb');
+            icon.classList.toggle('fa-moon');
+        });
+
+        languageToggle.addEventListener('click', () => {
+            currentLanguage = currentLanguage === 'ar' ? 'en' : 'ar';
+            document.querySelectorAll('.ar, .en').forEach(el => el.classList.toggle('hidden'));
+            languageToggle.textContent = currentLanguage === 'ar' ? 'EN | عربي' : 'عربي | EN';
+            updateUIText();
+        });
 
         imageInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
@@ -187,7 +348,7 @@
                     originalImage.src = event.target.result;
                     originalImage.onload = () => {
                         enhanceButton.disabled = false;
-                        statusElement.textContent = 'الصورة جاهزة للتحسين';
+                        updateStatus('ready');
                         updateImageInfo(originalImage, originalImageInfo);
                     };
                 };
@@ -197,7 +358,7 @@
 
         enhanceButton.addEventListener('click', () => {
             if (!originalImage.src) {
-                statusElement.textContent = 'الرجاء اختيار صورة أولاً';
+                updateStatus('noImage');
                 return;
             }
 
@@ -205,13 +366,13 @@
             const sharpness = parseInt(sharpnessInput.value) / 100;
             const contrast = parseInt(contrastInput.value) / 100;
 
-            statusElement.textContent = 'جاري تحسين الصورة...';
+            updateStatus('enhancing');
             loadingOverlay.style.display = 'flex';
 
             setTimeout(() => {
                 superResolution(originalImage, scale, sharpness, contrast);
                 loadingOverlay.style.display = 'none';
-                statusElement.textContent = 'تم تحسين الصورة بنجاح!';
+                updateStatus('success');
                 downloadButton.style.display = 'block';
             }, 100);
         });
@@ -233,15 +394,15 @@
             ctx.imageSmoothingEnabled = true;
             ctx.imageSmoothingQuality = 'high';
             
-
+            // Bicubic interpolation
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
             let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
             
-
+            // Apply sharpening
             imageData = sharpenImage(imageData, sharpness);
 
-
+            // Apply contrast enhancement
             imageData = enhanceContrast(imageData, contrast);
 
             ctx.putImageData(imageData, 0, 0);
@@ -287,24 +448,56 @@
             return imageData;
         }
 
-function updateImageInfo(img, infoElement) {
-    const width = img.naturalWidth;
-    const height = img.naturalHeight;
-    const sizeInBytes = atob(img.src.split(',')[1]).length;
-    
-    let sizeText;
-    if (sizeInBytes < 1024 * 1024) {
+        function updateImageInfo(img, infoElement) {
+            const width = img.naturalWidth;
+            const height = img.naturalHeight;
+            const sizeInBytes = atob(img.src.split(',')[1]).length;
+            
+            let sizeText;
+            if (sizeInBytes < 1024 * 1024) {
+                const sizeInKB = (sizeInBytes / 1024).toFixed(2);
+                sizeText = currentLanguage === 'ar' ? `${sizeInKB} كيلوبايت` : `${sizeInKB} KB`;
+            } else {
+                const sizeInMB = (sizeInBytes / (1024 * 1024)).toFixed(2);
+                sizeText = currentLanguage === 'ar' ? `${sizeInMB} ميجابايت` : `${sizeInMB} MB`;
+            }
 
-        const sizeInKB = (sizeInBytes / 1024).toFixed(2);
-        sizeText = `${sizeInKB} كيلوبايت`;
-    } else {
+            infoElement.textContent = currentLanguage === 'ar' 
+                ? `الأبعاد: ${width}x${height} بكسل | الحجم: ${sizeText}`
+                : `Dimensions: ${width}x${height} px | Size: ${sizeText}`;
+        }
 
-        const sizeInMB = (sizeInBytes / (1024 * 1024)).toFixed(2);
-        sizeText = `${sizeInMB} ميجابايت`;
-    }
+        function updateStatus(status) {
+            const statusTexts = {
+                ready: {
+                    ar: 'الصورة جاهزة للتحسين',
+                    en: 'Image ready for enhancement'
+                },
+                noImage: {
+                    ar: 'الرجاء اختيار صورة أولاً',
+                    en: 'Please choose an image first'
+                },
+                enhancing: {
+                    ar: 'جاري تحسين الصورة...',
+                    en: 'Enhancing image...'
+                },
+                success: {
+                    ar: 'تم تحسين الصورة بنجاح!',
+                    en: 'Image enhanced successfully!'
+                }
+            };
 
-    infoElement.textContent = `الأبعاد: ${width}x${height} بكسل | الحجم: ${sizeText}`;
-}
+            statusElement.textContent = statusTexts[status][currentLanguage];
+        }
+
+        function updateUIText() {
+            updateStatus(statusElement.textContent.includes('جاهزة') || statusElement.textContent.includes('ready') ? 'ready' : 'success');
+            updateImageInfo(originalImage, originalImageInfo);
+            updateImageInfo(enhancedImage, enhancedImageInfo);
+        }
+
+        // Initialize UI
+        updateUIText();
     </script>
 </body>
 </html>
