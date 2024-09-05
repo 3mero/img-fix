@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تحسين الصور المتقدم مع Super-Resolution</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f4f8;
+            color: #333;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #34495e;
+        }
+        input[type="file"], input[type="number"], select, button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #bdc3c7;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        .image-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+        .image-wrapper {
+            width: 48%;
+        }
+        .image-wrapper img {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #bdc3c7;
+            border-radius: 5px;
+        }
+        .image-info {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 14px;
+            color: #7f8c8d;
+        }
+        #status {
+            text-align: center;
+            font-weight: bold;
+            margin-top: 20px;
+            color: #27ae60;
+        }
+        #loadingOverlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        #downloadButton {
+            display: block;
+            width: 200px;
+            margin: 20px auto;
+            padding: 10px;
+            background-color: #2ecc71;
+            color: white;
+            text-align: center;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        #downloadButton:hover {
+            background-color: #27ae60;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>تحسين الصور المتقدم مع Super-Resolution</h1>
+        <div class="input-group">
+            <label for="imageInput">اختر صورة:</label>
+            <input type="file" id="imageInput" accept="image/*">
+        </div>
+        <div class="input-group">
+            <label for="scaleInput">معامل التكبير (1-4):</label>
+            <input type="number" id="scaleInput" min="1" max="4" step="1" value="2">
+        </div>
+        <div class="input-group">
+            <label for="sharpnessInput">حدة الصورة (0-100):</label>
+            <input type="number" id="sharpnessInput" min="0" max="100" step="1" value="50">
+        </div>
+        <div class="input-group">
+            <label for="contrastInput">التباين (0-100):</label>
+            <input type="number" id="contrastInput" min="0" max="100" step="1" value="50">
+        </div>
+        <button id="enhanceButton">تحسين الصورة</button>
+        <div id="status"></div>
+        <div class="image-container">
+            <div class="image-wrapper">
+                <h3>الصورة الأصلية</h3>
+                <img id="originalImage" alt="الصورة الأصلية">
+                <div id="originalImageInfo" class="image-info"></div>
+            </div>
+            <div class="image-wrapper">
+                <h3>الصورة المحسنة</h3>
+                <img id="enhancedImage" alt="الصورة المحسنة">
+                <div id="enhancedImageInfo" class="image-info"></div>
+            </div>
+        </div>
+        <button id="downloadButton" style="display: none;">تنزيل الصورة المحسنة</button>
+    </div>
+    <div id="loadingOverlay">
+        <div class="spinner"></div>
+    </div>
+
+    <script>
+        const imageInput = document.getElementById('imageInput');
+        const scaleInput = document.getElementById('scaleInput');
+        const sharpnessInput = document.getElementById('sharpnessInput');
+        const contrastInput = document.getElementById('contrastInput');
+        const enhanceButton = document.getElementById('enhanceButton');
+        const originalImage = document.getElementById('originalImage');
+        const enhancedImage = document.getElementById('enhancedImage');
+        const statusElement = document.getElementById('status');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const downloadButton = document.getElementById('downloadButton');
+        const originalImageInfo = document.getElementById('originalImageInfo');
+        const enhancedImageInfo = document.getElementById('enhancedImageInfo');
+
+        let originalImageData;
+
+        imageInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    originalImage.src = event.target.result;
+                    originalImage.onload = () => {
+                        enhanceButton.disabled = false;
+                        statusElement.textContent = 'الصورة جاهزة للتحسين';
+                        updateImageInfo(originalImage, originalImageInfo);
+                    };
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        enhanceButton.addEventListener('click', () => {
+            if (!originalImage.src) {
+                statusElement.textContent = 'الرجاء اختيار صورة أولاً';
+                return;
+            }
+
+            const scale = parseInt(scaleInput.value);
+            const sharpness = parseInt(sharpnessInput.value) / 100;
+            const contrast = parseInt(contrastInput.value) / 100;
+
+            statusElement.textContent = 'جاري تحسين الصورة...';
+            loadingOverlay.style.display = 'flex';
+
+            setTimeout(() => {
+                superResolution(originalImage, scale, sharpness, contrast);
+                loadingOverlay.style.display = 'none';
+                statusElement.textContent = 'تم تحسين الصورة بنجاح!';
+                downloadButton.style.display = 'block';
+            }, 100);
+        });
+
+        downloadButton.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = 'enhanced_image.png';
+            link.href = enhancedImage.src;
+            link.click();
+        });
+
+        function superResolution(img, scale, sharpness, contrast) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            canvas.width = img.naturalWidth * scale;
+            canvas.height = img.naturalHeight * scale;
+
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            
+
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+            let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            
+
+            imageData = sharpenImage(imageData, sharpness);
+
+
+            imageData = enhanceContrast(imageData, contrast);
+
+            ctx.putImageData(imageData, 0, 0);
+
+            enhancedImage.src = canvas.toDataURL('image/png');
+            enhancedImage.onload = () => {
+                updateImageInfo(enhancedImage, enhancedImageInfo);
+            };
+        }
+
+        function sharpenImage(imageData, amount) {
+            const w = imageData.width;
+            const h = imageData.height;
+            const data = imageData.data;
+            
+            for (let y = 1; y < h - 1; y++) {
+                for (let x = 1; x < w - 1; x++) {
+                    const i = (y * w + x) * 4;
+                    for (let c = 0; c < 3; c++) {
+                        const val = 5 * data[i + c]
+                                    - data[i - 4 + c]
+                                    - data[i + 4 + c]
+                                    - data[i - w * 4 + c]
+                                    - data[i + w * 4 + c];
+                        data[i + c] = Math.min(255, Math.max(0, data[i + c] + amount * (val - data[i + c])));
+                    }
+                }
+            }
+            
+            return imageData;
+        }
+
+        function enhanceContrast(imageData, amount) {
+            const data = imageData.data;
+            const factor = (259 * (amount * 255 + 255)) / (255 * (259 - amount * 255));
+
+            for (let i = 0; i < data.length; i += 4) {
+                for (let j = 0; j < 3; j++) {
+                    data[i + j] = factor * (data[i + j] - 128) + 128;
+                }
+            }
+
+            return imageData;
+        }
+
+function updateImageInfo(img, infoElement) {
+    const width = img.naturalWidth;
+    const height = img.naturalHeight;
+    const sizeInBytes = atob(img.src.split(',')[1]).length;
+    
+    let sizeText;
+    if (sizeInBytes < 1024 * 1024) {
+
+        const sizeInKB = (sizeInBytes / 1024).toFixed(2);
+        sizeText = `${sizeInKB} كيلوبايت`;
+    } else {
+
+        const sizeInMB = (sizeInBytes / (1024 * 1024)).toFixed(2);
+        sizeText = `${sizeInMB} ميجابايت`;
+    }
+
+    infoElement.textContent = `الأبعاد: ${width}x${height} بكسل | الحجم: ${sizeText}`;
+}
+    </script>
+</body>
+</html>
